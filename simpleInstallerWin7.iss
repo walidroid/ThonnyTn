@@ -192,5 +192,124 @@ function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := Restarted;
 end;
+; Comment out or remove the line referencing the missing file
+;Source: "G:\dev\python\pytn\win7x86\Windows6.1-KB2533623-x86.msu"; DestDir: "{tmp}"; Flags: ignoreversion ; Components: "Python_3112_x86"
+Filename:"py.exe" ;Parameters: "-m pip install thonny --find-links {tmp}\deps --prefer-binary" ; Components: "editors"
+Filename:"py.exe" ;Parameters: "-m pip install pyqt5 numpy --find-links {tmp}\deps --prefer-binary" ; Components: "bac_sc"
+Filename:"py.exe" ;Parameters: "-m pip install pandas matplotlib xlrd xlsxwriter xlwt openpyxl jupyterlab notebook --prefer-binary --find-links {tmp}\deps" ; Components: "bac_eco"
+[Code]
+
+function IsKBInstalled(KB: string): Boolean;
+var
+  WbemLocator: Variant;
+  WbemServices: Variant;
+  WQLQuery: string;
+  WbemObjectSet: Variant;
+begin
+  WbemLocator := CreateOleObject('WbemScripting.SWbemLocator');
+  WbemServices := WbemLocator.ConnectServer('', 'root\CIMV2');
+
+  WQLQuery := 'select * from Win32_QuickFixEngineering where HotFixID = ''' + KB + '''';
+
+  WbemObjectSet := WbemServices.ExecQuery(WQLQuery);
+  Result := (not VarIsNull(WbemObjectSet)) and (WbemObjectSet.Count > 0);
+end;
 
 
+const
+  (*** Customize the following to your own name. ***)
+  RunOnceName = 'Red�marrage de l'' installation';
+
+  QuitMessageReboot = 'The installation of a prerequisite program was not completed. You will need to restart your computer to complete that installation.'#13#13'After restarting your computer, Setup will continue next time an administrator logs in.';
+  QuitMessageError = 'Error. Cannot continue.';
+
+var
+  Restarted: Boolean;
+
+function InitializeSetup(): Boolean;
+begin
+  Restarted := ExpandConstant('{param:restart|0}') = '1';
+
+  if not Restarted then begin
+    Result := not RegValueExists(HKA, 'Software\Microsoft\Windows\CurrentVersion\RunOnce', RunOnceName);
+    if not Result then
+      MsgBox(QuitMessageReboot, mbError, mb_Ok);
+  end else
+    Result := True;
+end;
+
+function DetectAndInstallPrerequisites: Boolean;
+var
+  
+  ResultCode: Integer;
+begin
+  
+  
+      ExtractTemporaryFiles('{tmp}\Windows6.1-KB2999226-x86.msu');
+      ExtractTemporaryFiles('{tmp}\Windows6.1-KB2533623-x86.msu');
+      Exec('wusa.exe',ExpandConstant('{tmp}')+'\Windows6.1-KB2999226-x86.msu /quiet /norestart',  '',SW_SHOWNORMAL, ewWaitUntilTerminated, ResultCode);
+      Exec('wusa.exe',ExpandConstant('{tmp}')+'\Windows6.1-KB2533623-x86.msu /quiet /norestart',  '',SW_SHOWNORMAL, ewWaitUntilTerminated, ResultCode);
+  
+  
+
+    Result := True;
+
+  (*** Remove the following block! Used by this demo to simulate a prerequisite install requiring a reboot. ***)
+   
+end;
+
+function Quote(const S: String): String;
+begin
+  Result := '"' + S + '"';
+end;
+
+function AddParam(const S, P, V: String): String;
+begin
+  if V <> '""' then
+    Result := S + ' /' + P + '=' + V;
+end;
+
+function AddSimpleParam(const S, P: String): String;
+begin
+ Result := S + ' /' + P;
+end;
+
+procedure CreateRunOnceEntry;
+var
+  RunOnceData: String;
+begin
+  RunOnceData := Quote(ExpandConstant('{srcexe}')) + ' /restart=1';
+  RunOnceData := AddParam(RunOnceData, 'LANG', ExpandConstant('{language}'));
+  RunOnceData := AddParam(RunOnceData, 'DIR', Quote(WizardDirValue));
+  RunOnceData := AddParam(RunOnceData, 'GROUP', Quote(WizardGroupValue));
+  if WizardNoIcons then
+    RunOnceData := AddSimpleParam(RunOnceData, 'NOICONS');
+  RunOnceData := AddParam(RunOnceData, 'TYPE', Quote(WizardSetupType(False)));
+  RunOnceData := AddParam(RunOnceData, 'COMPONENTS', Quote(WizardSelectedComponents(False)));
+  RunOnceData := AddParam(RunOnceData, 'TASKS', Quote(WizardSelectedTasks(False)));
+
+  (*** Place any custom user selection you want to remember below. ***)
+
+  //<your code here>
+  
+  RegWriteStringValue(HKA, 'Software\Microsoft\Windows\CurrentVersion\RunOnce', RunOnceName, RunOnceData);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+
+  
+begin
+  
+    if not IsKBInstalled('KB2999226') or   not IsKBInstalled('KB2533623') Then begin
+      DetectAndInstallPrerequisites
+      CreateRunOnceEntry;
+      NeedsRestart := True;
+      Result := QuitMessageReboot;
+    end;
+  
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := Restarted;
+end;
