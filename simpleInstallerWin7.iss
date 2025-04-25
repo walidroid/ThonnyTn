@@ -192,7 +192,6 @@ function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := Restarted;
 end;
-; Comment out or remove the line referencing the missing file
 ;Source: "G:\dev\python\pytn\win7x86\Windows6.1-KB2533623-x86.msu"; DestDir: "{tmp}"; Flags: ignoreversion ; Components: "Python_3112_x86"
 Filename:"py.exe" ;Parameters: "-m pip install thonny --find-links {tmp}\deps --prefer-binary" ; Components: "editors"
 Filename:"py.exe" ;Parameters: "-m pip install pyqt5 numpy --find-links {tmp}\deps --prefer-binary" ; Components: "bac_sc"
@@ -313,3 +312,5 @@ function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := Restarted;
 end;
+
+
