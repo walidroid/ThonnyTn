@@ -26,11 +26,7 @@ jobs:
       - name: Download Python installer
         run: python python_last_version.py
 
-      - name: Download Windows Update for Win7
-        run: |
-          mkdir -p win7x86
-          # Download the Windows update file if needed
-          # curl -o win7x86/Windows6.1-KB2533623-x86.msu https://download.microsoft.com/download/...
+      
       - name: Install Inno Setup
         run: |
           choco install innosetup -y
